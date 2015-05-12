@@ -44,7 +44,7 @@ AllPages.prototype.openstreetmap = function() {
 			'z':{id:'hotkey-z', title:'SHIFT+"z": brownfield / severe dmg.', enabled: true},
 			'x':{id:'hotkey-x', title:'SHIFT+"x": IDP / camps', enabled: true}
 		},
-		hk_notes: 'NOTE: For hotkeys hold SHIFT plus hotkey to activate. Ensure that CAPS LOCK is turned off. An area must be selected for the hotkey to correctly work. To change using the hotkeys for an area that has already been tagged, ensure that the area is first selected before running the hotkey.',
+		hk_notes: 'NOTE: For hotkeys hold SHIFT plus hotkey to activate. Ensure that CAPS LOCK is turned off. An area must be selected for the hotkey to correctly work. To change an existing area using the hotkeys, the area must first be selected before running the hotkey.',
 		exec_choices: [ //0...4
 			'Add New Point',
 			'Add New Line',
