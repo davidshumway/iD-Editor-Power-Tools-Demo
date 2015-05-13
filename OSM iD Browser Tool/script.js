@@ -161,7 +161,7 @@ AllPages.prototype.openstreetmap = function() {
 		inp.id = 'after-hotkey';
 		for (var i in o.exec_choices) { // 0,1,2,[3=Do Nothing]
 			var op = document.createElement('option');
-			op.value = i;
+			op.value = i*1;
 			op.innerText = o.exec_choices[i];
 			if (i == ls_vars.exec_choice) {
 				op.selected = true;
@@ -170,7 +170,7 @@ AllPages.prototype.openstreetmap = function() {
 		}
 		inp.addEventListener('change', function(e) {
 			init_ls_vars(); // Get fresh
-			ls_vars.exec_choice = this.value;
+			ls_vars.exec_choice = this.value*1;
 			localStorage[ 'extension_osm_vars' ] = JSON.stringify(ls_vars);
 		}, false);
 		d1b.appendChild(a);
@@ -327,7 +327,7 @@ AllPages.prototype.openstreetmap = function() {
 	 * function wait
 	 */
 	function wait(commands) {
-		var timeout = ls_vars.delay.replace(/[^\d]/g,''); // Only digits
+		var timeout = ((ls_vars.delay + '').replace(/[^\d]/g,'')) * 1; // Only digits
 		if (!commands.length) return; // Done here.
 		console.log(commands[0]);
 		if (commands[0] == 'remove-minors') { // Remove any tags that are here, one tag at a time.
@@ -418,6 +418,12 @@ AllPages.prototype.openstreetmap = function() {
 		// Start @ 1
 		var commands = [
 			function(){},
+			function(){ // Ensure that tags is expanded!
+				var tags = document.getElementsByClassName('hide-toggle'); // A element
+				if (tags && tags[0] && tags[0].className && tags[0].className != 'hide-toggle expanded') {
+					tags[0].click();
+				}
+			}, 
 			'remove-minors',
 			'add-btn',
 			// GEN. TO KEEP AS AREA NOT LINE.
@@ -426,7 +432,7 @@ AllPages.prototype.openstreetmap = function() {
 				var n = 0;
 				var a = document.getElementsByClassName('key combobox-input');
 				a[n].value = 'landuse';
-				a[n].click();a[n].focus();a[n].blur();console.log(a);
+				a[n].click();a[n].focus();a[n].blur();
 			},
 			function(){
 				// value tag
@@ -558,7 +564,7 @@ AllPages.prototype.openstreetmap = function() {
 			function() {
 				// NEW AREA BTN
 				var ch;
-				switch(ls_vars.exec_choice) {
+				switch(ls_vars.exec_choice + '') {
 					case '0':
 						ch = 'point';
 						break;
@@ -595,6 +601,12 @@ AllPages.prototype.openstreetmap = function() {
 		// Wait for the elements to appear before continuing.
 		var commands = [
 			function(){},
+			function(){ // Ensure that tags is expanded!
+				var tags = document.getElementsByClassName('hide-toggle'); // A element
+				if (tags && tags[0] && tags[0].className && tags[0].className != 'hide-toggle expanded') {
+					tags[0].click();
+				}
+			}, 
 			'remove-minors',
 			'add-btn',
 			function() {
@@ -638,7 +650,23 @@ AllPages.prototype.openstreetmap = function() {
 			},
 			function() {
 				// NEW AREA BTN
-				document.getElementsByClassName('add-area add-button col4')[0].click();
+				var ch;
+				switch(ls_vars.exec_choice + '') {
+					case '0':
+						ch = 'point';
+						break;
+					case '1':
+						ch = 'line';
+						break;
+					case '2':
+						ch = 'area';
+						break;
+					case '3':
+						return; // Quit here
+				}
+				var n = document.getElementsByClassName('add-'+ch+' add-button col4');
+				if (n && n[0])
+					n[0].click();
 			}
 		];
 		
@@ -662,6 +690,12 @@ AllPages.prototype.openstreetmap = function() {
 		// Wait for the elements to appear before continuing.
 		var commands = [
 			function(){},
+			function(){ // Ensure that tags is expanded!
+				var tags = document.getElementsByClassName('hide-toggle'); // A element
+				if (tags && tags[0] && tags[0].className && tags[0].className != 'hide-toggle expanded') {
+					tags[0].click();
+				}
+			}, 
 			'remove-minors',
 			'add-btn',
 			function() {
@@ -678,7 +712,23 @@ AllPages.prototype.openstreetmap = function() {
 			},
 			function() {
 				// NEW AREA BTN
-				document.getElementsByClassName('add-area add-button col4')[0].click();
+				var ch;
+				switch(ls_vars.exec_choice + '') {
+					case '0':
+						ch = 'point';
+						break;
+					case '1':
+						ch = 'line';
+						break;
+					case '2':
+						ch = 'area';
+						break;
+					case '3':
+						return; // Quit here
+				}
+				var n = document.getElementsByClassName('add-'+ch+' add-button col4');
+				if (n && n[0])
+					n[0].click();
 			}
 		];
 		wait(commands);
