@@ -166,7 +166,7 @@ AllPages.prototype.openstreetmap = function() {
 		// Vars container
 		var d1b = document.createElement('div');
 		d1b.setAttribute('style','border-bottom:1px solid #a2a2a2;display:none;padding:4px 8px;');
-		d1.appendChild(d1b);
+		o.dv.d1.appendChild(d1b);
 		
 		// Add note
 		d1b.appendChild(document.createTextNode(o.hk_notes));
