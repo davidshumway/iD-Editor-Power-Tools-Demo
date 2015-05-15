@@ -391,7 +391,6 @@ AllPages.prototype.openstreetmap = function() {
 		
 		// Init localStorage vars
 		init_ls_vars();
-		//~ init_keypress();
 		
 		// Sidebar
 		var sb = document.getElementById('sidebar');
@@ -500,17 +499,15 @@ AllPages.prototype.openstreetmap = function() {
 
 			k.value = k.value.trim();
 			v.value = v.value.trim();
-			v.style.height = '31px'; // height
-			v.style.position = 'inherit'; // height
-			v.style.width = '100%'; // height
-			//~ v.style.zIndex = '1'; // height
+			v.style.height = '31px';
+			v.style.position = 'inherit';
+			v.style.width = '100%';
 			
 			k.value = k.value.charAt(0);
 			var vl = p.validate(li);
 			if (vl == '') {
 				o.hotkeys[ k.value ] = li.obj();
-				p.render(); // Write
-				//~ p.save(); // Write
+				p.render(); // Render
 			} else {console.log(vl);
 				li.div_notice.style.maxHeight = '100px';
 				li.div_notice.style.opacity = '1';
@@ -628,7 +625,7 @@ AllPages.prototype.openstreetmap = function() {
 		
 		var b = document.createElement('button'); // BTN
 		b.className = 'remove minor';
-		b.setAttribute('style','border-top-width:1;');
+		b.setAttribute('style','border-top-width:1px;');
 		var s = document.createElement('span'); // SPAN
 		s.className = 'icon delete';
 		b.appendChild(s);
