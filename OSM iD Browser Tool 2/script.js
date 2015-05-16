@@ -40,14 +40,23 @@ AllPages.prototype.openstreetmap = function() {
 		},
 		hotkeys: {
 		},
-		hk_notes: 'NOTE: For hotkeys hold CTRL plus hotkey to activate (⌘ plus hotkey on Mac). An area must be selected for the hotkey to correctly work. To change an existing area using the hotkeys, the area must first be selected before running the hotkey.\nTest new line.',
+		hk_notes:
+			'NOTE: For hotkeys hold CTRL plus hotkey to activate (⌘ plus hotkey on Mac). An area must be selected for the hotkey to work correctly. To change an existing area using the hotkeys, the area must be selected first before running the hotkey.'+
+			'<br>Area=After hotkey is finished create a new Area.'+
+			'<br>Enable=Whether hotkey is enabled or disabled.'+
+			'<br>Square=After hotkey is finished square the corners of the area.',
 		dv: {
 			d1: null,
-			d2: null
+			d2: null,
+			d1b: null
 		},
-		sidebar: document.getElementById('sidebar')
+		sidebar: document.getElementById('sidebar'),
+		intervals: {
+			add_to_page_interval: null, // Wait for search Input to appear
+			interval_images: null, // Lighten images ~1 second interval
+			add_to_page_interval_ms: 500 // Num. seconds for add to page interval
+		}
 	}
-	
 	// init_ls_vars
 	function init_ls_vars() {
 		if (!localStorage[ 'extension_osm_vars2' ] || localStorage[ 'extension_osm_vars2' ] == 'false' || localStorage[ 'extension_osm_vars2' ] == 'undefined') {
@@ -138,42 +147,46 @@ AllPages.prototype.openstreetmap = function() {
 		// Div container
 		o.dv.d1 = document.createElement('div');
 		o.dv.d1.setAttribute('style','border-bottom:1px solid #a2a2a2;');
-		sidebar.insertBefore(o.dv.d1, sidebar.firstChild); // Append
+		sidebar.insertBefore(o.dv.d1, sidebar.firstChild);
+		
 		// Open / close button
-		o.dv.d2 = document.createElement('div'); // "button" causes bad CSS.
-		o.dv.d2.setAttribute('style','width:100%;height:20px;text-align:center;cursor:pointer;font-family:courier;border:1px solid #a2a2a2;background-color:white;');
-		o.dv.d2.innerText = 'TOOLS'; //(a;b;c;)
+		o.dv.d2 = document.createElement('div');
+		o.dv.d2.setAttribute('style','width:100%;height:20px;text-align:center;cursor:pointer;font-family:courier;border:3px solid #a2a2a2;background-color:white;');
+		o.dv.d2.innerText = 'TOOLS (show)';
+		o.dv.d2.id = 'id_browser_tools_div';
 		o.dv.d2.is_open = false;
 		o.dv.d1.appendChild(o.dv.d2);
 		o.dv.d2.addEventListener('click', function(e) {
-			console.log(this.is_open);
 			if (!this.is_open) {
-				this.style.border = '2px solid #a2a2a2;';
-				d1b.style.display = 'block';
+				o.dv.d2.innerText = 'TOOLS (hide)';
+				o.dv.d1b.style.display = 'block';
 				this.is_open = true;
 				o.sb[1].style.top = '480px';
 				o.sb[0].style.top = '460px';
 				document.getElementsByClassName('inspector-body')[0].style.top = '520px';
 			} else {
-				this.style.border = '1px solid #a2a2a2;';
-				d1b.style.display = 'none';
+				o.dv.d2.innerText = 'TOOLS (show)';
+				o.dv.d1b.style.display = 'none';
 				this.is_open = false;
 				o.sb[1].style.top = '80px';
 				o.sb[0].style.top = '60px';
 				document.getElementsByClassName('inspector-body')[0].style.top = '120px';
 			}
 		}, false);
+		
 		// Vars container
-		var d1b = document.createElement('div');
-		d1b.setAttribute('style','border-bottom:1px solid #a2a2a2;display:none;padding:4px 8px;');
-		o.dv.d1.appendChild(d1b);
+		o.dv.d1b = document.createElement('div');
+		o.dv.d1b.setAttribute('style','border-bottom:1px solid #a2a2a2;display:none;padding:4px 8px;');
+		o.dv.d1.appendChild(o.dv.d1b);
 		
 		// Add note
-		d1b.appendChild(document.createTextNode(o.hk_notes));
-		d1b.appendChild(document.createElement('br'));
+		var x = document.createElement('div');
+		x.setAttribute('style','border-bottom:1px solid #a2a2a2;background-color:#ace3ef;');
+		o.dv.d1b.appendChild(x);
+		x.innerHTML = o.hk_notes;
 		
 		// Add hotkeys
-		add_hotkeys(d1b);
+		add_hotkeys(o.dv.d1b);
 		
 		// Image levels
 		for (var type in o.iml_types) {
@@ -181,7 +194,7 @@ AllPages.prototype.openstreetmap = function() {
 			var a = document.createElement('label');
 			a.htmlFor = 'slider-'+type;
 			a.innerText = type+'('+value+'):';
-			d1b.appendChild(a);
+			o.dv.d1b.appendChild(a);
 			var x = document.createElement('input');
 			x.label = a; // Set a.input
 			x.id = 'slider-'+type;
@@ -202,12 +215,12 @@ AllPages.prototype.openstreetmap = function() {
 				//~ localStorage[ 'extension_osm_vars2' ] = JSON.stringify(ls_vars); // Update
 				//~ init_sliders(); // Re-init
 			}, false);
-			d1b.appendChild(x);
+			o.dv.d1b.appendChild(x);
 			x.setAttribute('value', value); // Set value
 			// br
 			var br = document.createElement('br');
 			br.setAttribute('style', 'clear:both;');
-			d1b.appendChild(br);
+			o.dv.d1b.appendChild(br);
 		}
 		init_sliders(); // Init
 	}
@@ -448,16 +461,78 @@ AllPages.prototype.openstreetmap = function() {
 				o.hotkeys[ hk.char ] = hk;
 			}
 			this.ls(); // localStorage
-			// Add preset list to page
-			p_init_preset();
-			// Add keypress to page
+			this.add_to_page() // add to page JS
+		}
+		c.add_to_page = function() {
+			// Always add keypress to page here.
+			// It will only add to `document` in the case that search
+			// input is missing.
+			// NOTE: `preset-search-input` appears to always be on page after first initialization. HOWEVER, after
+			// testing it appears to leave the page and come back!
 			p_init_hotkeys();
+			
+			// TARGET IS target: input.preset-search-input
+			
+			return;
+			// DEBUG
+			// This fires each time a new area is created and the search input is autofocused. However, the parentNode is also removed.
+			// So this is temporary. However, `parentNode.parentNode` is constant. `parentNode.parentNode` fires three times `DOMNodeRemoved`
+			// events when search input is autofocused!
+			// A = `parentNode.parentNode` is document.getElementsByClassName('preset-list-pane pane')[0].
+			// `A` does not exist on page init. `A`.parentNode=`B`=document.getElementsByClassName('panewrap')[0];
+			// `B` does not exist on page init. `B`.parentNode=`C`=document.getElementsByClassName('inspector-wrap')[0];
+			// `C` does exist on page init (document.getElementsByClassName('inspector-wrap')[0]).
+			//
+			// document.getElementsByClassName('preset-search-input')[0].parentNode.addEventListener('DOMNodeRemoved',function() {alert('x');}, false);
+			//
+			//
+			//~ 
+			//~ var last = 0;
+			//~ setInterval(function() {
+				//~ var x = document.getElementsByClassName('preset-search-input');
+				//~ if (x && x[0] && last == 0) {
+					//~ last = 1;
+					//~ console.log('`preset-search-input` exists!');
+					//~ p_init_hotkeys();// Add keypress to page
+				//~ } else if ((!x || !x[0]) && last == 1) {
+					//~ last = 0;
+					//~ console.log('`preset-search-input` is gone!');
+				//~ }
+			//~ }, o.intervals.add_to_page_interval_ms);
+			//return;
+			//~ 
+			//~ // And for search input...
+			//~ //
+			//~ //
+			//~ console.log('o.intervals.add_to_page_interval is:'); // Debug
+			//~ console.log(o.intervals.add_to_page_interval);
+			//~ var x = document.getElementsByClassName('preset-search-input');
+			//~ if (x && x[0]) {
+				//~ console.log('`preset-search-input` exists!');
+				//~ if (o.intervals.add_to_page_interval)
+					//~ clearInterval(o.intervals.add_to_page_interval);// Clear
+				//~ // Old
+				//p_init_preset();// Add preset list to page
+			//~ } else {
+				//~ // There is only one interval waiting to add to page. If
+				//~ // the add_to_page function is called again by a user then
+				//~ // it will overwrite this interval.
+				//~ o.intervals.add_to_page_interval = setInterval(function() {
+					//~ var x = document.getElementsByClassName('preset-search-input');
+					//~ if (x && x[0]) {
+						//~ console.log('`preset-search-input` exists!');
+						//~ clearInterval(o.intervals.add_to_page_interval);
+						//~ p_init_hotkeys();// Add keypress to page
+					//~ }
+				//~ }, o.intervals.add_to_page_interval_ms);
+				//~ 
+				//~ console.log('o.intervals.add_to_page_interval is (now):'); // Debug
+				//~ console.log(o.intervals.add_to_page_interval);
+			//~ }
 		}
 		c.ls = function() {
 			// Update
 			localStorage[ 'extension_osm_vars2' ] = JSON.stringify(o.hotkeys);
-			// Insert to page here
-			
 		}
 		c.validate = function(li) {
 			var v = li.input_value,
@@ -538,11 +613,12 @@ AllPages.prototype.openstreetmap = function() {
 	}
 	// init_slider
 	function init_sliders() {
-		clearInterval(interval_images); // Clear by default.
+		if (o.intervals.interval_images) // Not null
+			clearInterval(o.intervals.interval_images); // Always clear
 		apply_img_filters(); // Call once to update or begin
 		for (var type in o.iml_types) {
 			if (o.iml_types[ type ] != 1) {
-				interval_images = setInterval(apply_img_filters, 1000);
+				o.intervals.interval_images = setInterval(apply_img_filters, 1000);
 				break;
 			}
 		}
@@ -561,13 +637,6 @@ AllPages.prototype.openstreetmap = function() {
 			images[ i ].style["-webkit-filter"] = filter;
 		}
 	}
-	function orth() {
-		// GET SELECTED IDS
-		var sel = id.selectedIDs(); // Array, e.g. ["w-1"] or ["w-6"]
-		// ORTHO
-		var a = new iD.operations.Orthogonalize(sel, id); // e.g. Orthogonalize(['w-1'],id);
-		a(); // Execute this function.
-	}
 	function js_append(func, values) {
 		// ...
 		var code = '(' + func + ')('+values+');'
@@ -576,10 +645,13 @@ AllPages.prototype.openstreetmap = function() {
 		(document.head||document.documentElement).appendChild(script);
 		script.parentNode.removeChild(script);
 	}
-	// Add preset + values
-	// Pass array
-	function p_init_preset() {
-		
+	// Add functions
+	function p_init() {
+		js_append(page__add_functions);
+	}
+	// Add functions
+	function p_init_si_hotkeys() {
+		js_append(page__si_hotkeys);
 	}
 	// Add hotkeys
 	// 
@@ -587,16 +659,171 @@ AllPages.prototype.openstreetmap = function() {
 		js_append(page__hotkeys, JSON.stringify(o.hotkeys));
 	}
 	
-	// Preset
-	function page__preset(hotkeys) {
-		
+	// Add hotkeys to search input. Does not remove hotkeys.
+	function page__si_hotkeys() {
+		//~ console.log('Run page__si_hotkeys()');
+		if (!id.hasOwnProperty('id_browser_tool_hotkeys')) return;// Stop
+		if (!id.hasOwnProperty('id_browser_tool_hotkeys_f')) return;// Stop
+		if (!id.id_browser_tool_hotkeys_f.hasOwnProperty('bToolChangeTags')) return;// Stop
+		var startTime = new Date().getTime(); // Millisec.
+		var intv = setInterval(// Pauses to let element appear.
+			function() {
+				var si = document.getElementsByClassName('preset-search-input');
+				if (!si || !si[0]) {
+					if (new Date().getTime() - startTime >= 1000) { // Has too much time elapsed? Say, 1.0 seconds. This ought to never occur.
+						clearInterval(intv);
+						console.log('page__si_hotkeys(): Giving up!');
+					}
+					return; // Stop
+				}
+				clearInterval(intv); // Clear
+				si = si[0];
+				
+				var c = 0;
+				for (var hk in id.id_browser_tool_hotkeys) {
+					var kb =
+						d3.
+						keybinding('osm_browser_tool_tags' + c). // keybinding( INDEX )
+						on(
+							iD.ui.cmd('⌘' + hk),
+							id.id_browser_tool_hotkeys_f.bToolChangeTags
+						)
+						d3.select(si).call(kb);
+					c++;
+				}
+			},
+			60
+		);
 	}
 	// e.g. new iD.actions.ChangeTags('w-1', {'building':'yes'})(id.graph()) ;
 	function page__hotkeys(hotkeys_obj) {
 		
 		var context = id;
+		var si = document.getElementsByClassName('preset-search-input')[0];
 		
-		function bToolChangeTags_valid(e) {
+		// Check obj. Set hotkeys_obj.
+		hotkeys_obj = id.id_browser_tool_hotkeys_f.bToolChangeTags_valid(hotkeys_obj);
+		
+		// Set id_browser_tool_hotkeys.hotkeys_obj
+		// object. Latest set of hotkeys.
+		context.id_browser_tool_hotkeys = hotkeys_obj;
+		
+		// Reset any indices, up to 200.
+		// Assuming users will not have more than 200 unique keys bound.
+		for (var i=0; i<200; i++) {
+			var kb =
+				d3.
+				keybinding('osm_browser_tool_tags' + i); // keybinding( INDEX )
+			d3.select(document).call(kb);
+			if (si)
+				d3.select(si).call(kb);
+		}
+		// Loop current hotkeys
+		// TODO: SHIFT = expect(iD.ui.cmd('⇧a')).to.eql('Shift+a');
+		var c = 0;
+		for (var hk in hotkeys_obj) {
+			var kb =
+				d3.
+				keybinding('osm_browser_tool_tags' + c). // keybinding( INDEX )
+				on(
+					iD.ui.cmd('⌘' + hk),
+					id.id_browser_tool_hotkeys_f.bToolChangeTags
+					//~ bToolChangeTags // old
+				)
+			d3.select(document).call(kb);
+			if (si)
+				d3.select(si).call(kb);
+			c++;
+		}
+	}
+	function page__add_functions() {
+		id.id_browser_tool_hotkeys_f = {
+			bToolChangeTags_valid: function() {},
+			bToolChangeTags: function() {}
+		};
+		/**
+		 * bToolChangeTags_valid
+		 * e.g. 'm':{ char: 'm', enabled: true, tags: 'buildings=yes', exec_next: true, square: true }
+		 */
+		id.id_browser_tool_hotkeys_f.bToolChangeTags = function(e) {
+			
+			if (!this.event.ctrlKey && !this.event.metaKey) return; // Must be CTRL.
+			
+			var context = id;
+			var char = String.fromCharCode(this.event.keyCode); //console.log(char);
+			var hk_obj = id.id_browser_tool_hotkeys;
+			if (!hk_obj.hasOwnProperty( char )) {
+				return;
+			}
+			hk_obj = hk_obj[ char ];
+			
+			// Enabled?
+			if (!hk_obj.enabled) return;
+			
+			var actions = [];
+			var addTags = {}; // e.g. { building: 'yes' };
+			var tmptags = hk_obj.tags.split('\n');
+			
+			// Set addTags
+			for (var i in tmptags) {
+				var tag = tmptags[i].split('=');
+				addTags[ tag[0] ] = tag[1];
+			}
+			
+			var entities =
+				_.filter(
+					_.map(
+						context.selectedIDs(),
+						context.entity
+					),
+					function(entity) {
+						return entity.geometry(context.graph()) === 'area';
+					}
+				);
+			_.each(
+				entities,
+				function(entity) {
+					var newTags = addTags;
+					actions.push(
+						iD.actions.ChangeTags(
+							entity.id,
+							newTags
+						)
+					);
+					if (hk_obj.square) {
+						actions.push(
+							iD.actions.Orthogonalize(entity.id, context.projection)
+						);
+						//~ new iD.operations.Orthogonalize([entity.id], id); // This works.
+						//~ actions.push( //new iD.operations.Orthogonalize(sel, id); // This breaks.
+							//~ iD.operations.Orthogonalize(
+								//~ [entity.id],
+								//~ id
+							//~ )
+						//~ );
+					}
+				}
+			);
+			if (actions.length) {
+				actions.push(
+					t('operations.change_tags.annotation')
+				);
+				context.perform.apply(
+					context,
+					actions
+				);
+				if (hk_obj.exec_next) { // Next?
+					if (document.getElementsByClassName('add-area add-button col4').length)
+						document.getElementsByClassName('add-area add-button col4')[0].click();
+				}
+			}
+		}
+		/**
+		 * bToolChangeTags_valid
+		 */
+		id.id_browser_tool_hotkeys_f.bToolChangeTags_valid = function(e) {
+		//~ function bToolChangeTags_valid(e) {
+		
 			for (var i in e) {
 				if 	(
 					i.length != 1 || // char length
@@ -650,108 +877,27 @@ AllPages.prototype.openstreetmap = function() {
 			}
 			return e;
 		}
-		
-		// e.g. 'm':{ char: 'm', enabled: true, tags: 'buildings=yes', exec_next: true, square: true }
-		function bToolChangeTags() {
-			// console.log(this); // e.g. Object {event: Object, capture: undefined, callback: function}
-			
-			if (!this.event.ctrlKey) return; // Must be CTRL.
-			
-			var char = String.fromCharCode(this.event.keyCode); console.log(char);
-			
-			var hk_obj = id.id_browser_tool_hotkeys;
-			if (!hk_obj.hasOwnProperty( char )) {
-				return;
-			}
-			hk_obj = hk_obj[ char ]; console.log(hk_obj);
-			
-			var removeTags = ['area','natural','landuse'];
-			var actions = [];
-			var addTags = {}; // e.g. { building: 'yes' };
-			var tmptags = hk_obj.tags.split('\n');
-			
-			// Set addTags
-			for (var i in tmptags) {
-				var tag = tmptags[i].split('=');
-				addTags[ tag[0] ] = tag[1];
-			}
-			
-			var entities =
-				_.filter(
-					_.map(
-						context.selectedIDs(),
-						context.entity
-					),
-					function(entity) {
-						return entity.geometry(context.graph()) === 'area';
-					}
-				);
-			_.each(
-				entities,
-				function(entity) {
-					var newTags = addTags;
-					actions.push(
-						iD.actions.ChangeTags(
-							entity.id,
-							newTags
-						)
-					);
-					//~ var newTags =
-						//~ _.omit(
-							//~ _.merge(_.clone(entity.tags), addTags),
-							//~ removeTags
-						//~ );
-					//~ actions.push(
-						//~ iD.actions.ChangeTags(
-							//~ entity.id,
-							//~ newTags
-						//~ )
-					//~ );
+	}
+	/**
+	 * page_init
+	 */
+	function page_init() {
+		p_init(); // Adds functions
+		document.getElementsByClassName('inspector-wrap')[0].addEventListener(
+			'DOMNodeInserted',
+			function(e) {
+				if (e.target.toString() == '[object HTMLInputElement]' && e.target.parentNode.className == 'search-header') {
+					// Call once again d3.keybinding
+					p_init_si_hotkeys();
 				}
-			);
-			if (actions.length) {
-				actions.push(
-					t('operations.change_tags.annotation')
-				);
-				context.perform.apply(
-					context,
-					actions
-				)
-			}
-		}
-		
-		// Check obj
-		hotkeys_obj = bToolChangeTags_valid(hotkeys_obj); console.log(hotkeys_obj);
-		
-		// Set id_browser_tool_hotkeys.hotkeys_obj
-		// object, Latest set of hotkeys
-		context.id_browser_tool_hotkeys = hotkeys_obj;
-		
-		// Reset any indices, up to 200.
-		// Assuming users will not have more than 200 unique keys bound.
-		for (var i=0; i<200; i++) {
-			var kb =
-				d3.
-				keybinding('osm_browser_tool_tags' + i); // keybinding( INDEX )
-			d3.select(document).call(kb);
-		}
-		
-		// Add new ones
-		var c = 0;
-		for (var hk in hotkeys_obj) {
-			var kb =
-				d3.
-				keybinding('osm_browser_tool_tags' + c). // keybinding( INDEX )
-				on(
-					iD.ui.cmd('⌘' + hk),
-					bToolChangeTags
-				)
-			d3.select(document).call(kb);
-			c++;
-		}
+			}, false
+		);
 	}
 	
-	// Init
+	// Adds initial to page.
+	page_init();
+	
+	// Initialize tools.
 	tools_menu_init();
 }
 
