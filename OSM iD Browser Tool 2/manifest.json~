@@ -21,6 +21,6 @@
    "converted_from_user_script": false,
    "description": "For the iD editor at openstreetmap.org. Adds hotkeys and other productivity tools.",
    "name": "OSM iD Browser Tools",
-   "version": "1.22",
+   "version": "1.24",
    "manifest_version": 2
 }

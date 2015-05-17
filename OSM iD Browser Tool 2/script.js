@@ -41,11 +41,15 @@ AllPages.prototype.openstreetmap = function() {
 		hotkeys: {
 		},
 		hk_notes:
-			'NOTE 1: For hotkeys hold CTRL plus hotkey to activate (⌘ plus hotkey on Mac). An area must be selected for the hotkey to work correctly. To change an existing area using the hotkeys, the area must be selected first before running the hotkey.'+
+			'+'+
+			'<br>Area: After hotkey is finished create a new Area.'+
+			'<br>Enable: Whether hotkey is enabled or disabled.'+
+			'<br>Square: After hotkey is finished square the corners of the area.'+
+			'<br>CTRL/⌘: Whether hotkey is single key or key + CTRL (⌘ on Mac) combination.'+
+			'<br>NOTE 1: An area must be selected for the hotkey to work correctly. To change an existing area using hotkeys, the area must first be selected.'+
 			'<br>NOTE 2: For the tags field, enter as many tags as desired. Separate each tag by a new line.'+
-			'<br>Area=After hotkey is finished create a new Area.'+
-			'<br>Enable=Whether hotkey is enabled or disabled.'+
-			'<br>Square=After hotkey is finished square the corners of the area.',
+			'<br>NOTE 3: If any hotkeys do not use CTRL (⌘ on Mac) the autofocus for "Select feature type" will be disabled.'+
+			'<br>NOTE 4: Disallowed keys when key only (key without CTRL) are "W","F","B", and "H".',
 		dv: {
 			d1: null,
 			d2: null,
@@ -61,28 +65,37 @@ AllPages.prototype.openstreetmap = function() {
 	function init_ls_vars() {
 		if (!localStorage[ 'extension_osm_vars2' ] || localStorage[ 'extension_osm_vars2' ] == 'false' || localStorage[ 'extension_osm_vars2' ] == 'undefined') {
 			var x = {
-				'M':{ char: 'M', enabled: true, tags: 'buildings=yes', exec_next: true, square: true }
+				'z':{ char: 'z', enabled: true, tags: 'building=yes', exec_next: true, square: true, ctrl: false }
 			};
 			localStorage[ 'extension_osm_vars2' ] = JSON.stringify(x);
 		} else {
 		}
 		this.valid = function(e) { // return '' on success
 			for (var i in e) {
+				if (!e[i].hasOwnProperty('ctrl')) // Backwards compatibility
+					e[i].ctrl = true;
 				if 	(
 					i.length != 1 || // char length
 					!e[i].hasOwnProperty('char') ||
 					!e[i].hasOwnProperty('enabled') ||
 					!e[i].hasOwnProperty('tags') ||
 					!e[i].hasOwnProperty('exec_next') ||
+					!e[i].hasOwnProperty('ctrl') ||
 					typeof e[i].char != 'string' ||
 					typeof e[i].tags != 'string' ||
 					typeof e[i].enabled != 'boolean' ||
 					typeof e[i].exec_next != 'boolean' ||
 					typeof e[i].square != 'boolean' ||
+					typeof e[i].ctrl != 'boolean' ||
 					e[i].char.length != 1 ||
 					e[i].tags.length == 0
 					)
 				{
+					delete e[i];
+					continue;
+				}
+				// wfbh & ctrl
+				if (/^[WFBH]$/i.exec(e[i].char) && !e[i].ctrl) {
 					delete e[i];
 					continue;
 				}
@@ -176,17 +189,34 @@ AllPages.prototype.openstreetmap = function() {
 		
 		// Vars container
 		o.dv.d1b = document.createElement('div');
-		o.dv.d1b.setAttribute('style','border-bottom:1px solid #a2a2a2;display:none;padding:4px 8px;');
+		o.dv.d1b.setAttribute('style','border-bottom:1px solid #a2a2a2;display:none;');
 		o.dv.d1.appendChild(o.dv.d1b);
 		
-		// Add note
+		// Note container
 		var x = document.createElement('div');
-		x.setAttribute('style','border-bottom:1px solid #a2a2a2;background-color:#ace3ef;');
+		x.setAttribute('style','border-bottom:1px solid #a2a2a2;background-color:#ace3ef;padding:4px 8px;cursor:pointer;');
 		o.dv.d1b.appendChild(x);
 		x.innerHTML = o.hk_notes;
+		// .onclick. Add show/hide.
+		x.addEventListener(
+			'click',
+			function(e) {
+				if (this.innerText == '-') {
+					this.innerHTML = o.hk_notes;
+				} else {
+					this.innerText = '-';
+				}
+			},
+			false
+		);
+		
+		// Vars
+		var dv = document.createElement('div');
+		dv.setAttribute('style','padding:4px 8px;');
+		o.dv.d1b.appendChild(dv);
 		
 		// Add hotkeys
-		add_hotkeys(o.dv.d1b);
+		add_hotkeys(dv);
 		
 		// Image levels
 		for (var type in o.iml_types) {
@@ -194,7 +224,7 @@ AllPages.prototype.openstreetmap = function() {
 			var a = document.createElement('label');
 			a.htmlFor = 'slider-'+type;
 			a.innerText = type+'('+value+'):';
-			o.dv.d1b.appendChild(a);
+			dv.appendChild(a);
 			var x = document.createElement('input');
 			x.label = a; // Set a.input
 			x.id = 'slider-'+type;
@@ -215,12 +245,12 @@ AllPages.prototype.openstreetmap = function() {
 				//~ localStorage[ 'extension_osm_vars2' ] = JSON.stringify(ls_vars); // Update
 				//~ init_sliders(); // Re-init
 			}, false);
-			o.dv.d1b.appendChild(x);
+			dv.appendChild(x);
 			x.setAttribute('value', value); // Set value
 			// br
 			var br = document.createElement('br');
 			br.setAttribute('style', 'clear:both;');
-			o.dv.d1b.appendChild(br);
+			dv.appendChild(br);
 		}
 		init_sliders(); // Init
 	}
@@ -270,10 +300,14 @@ AllPages.prototype.openstreetmap = function() {
 		function keyfocus() {
 			this.style.position = 'absolute';
 			this.style.height = '160px';
-			this.style.width = '30%';
+			this.style.width = '80%';
 		}
 		function hk_keyup(e) {
 			this.value = this.value.toUpperCase();
+			// If non-CTRL key then replace chars.
+			if (!this.li.isCtrl.checked) {
+				this.value = this.value.replace(/^[WFBH/]$/, '');
+			}
 		}
 		
 		var l = document.createElement('li'); // LI
@@ -300,7 +334,7 @@ AllPages.prototype.openstreetmap = function() {
 		
 		var d = document.createElement('div'); // DIV
 		d.className = 'input-wrap-position';
-		d.setAttribute('style','width: 30%;');
+		d.setAttribute('style','width: 16%;');
 		l.appendChild(d);
 		var i = document.createElement('textarea'); // INPUT
 		i.className = 'value combobox-input';
@@ -376,6 +410,26 @@ AllPages.prototype.openstreetmap = function() {
 		b.li = l;
 		d.appendChild(b);
 		
+		var d = document.createElement('div'); // DIV
+		d.className = 'input-wrap-position';
+		d.setAttribute('style','width:14%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
+		l.appendChild(d);
+		var v = document.createElement('label'); // LABEL
+		v.setAttribute('style','cursor:pointer;');
+		v.htmlFor = 'extcb4'+rand;
+		v.innerText = 'CTRL/⌘';
+		d.appendChild(v);
+		d.appendChild(document.createElement('br')); // BR
+		var b = document.createElement('input'); // CHECKBOX
+		b.setAttribute('style','height:initial; margin:0; margin-left:35%;');
+		b.type = 'checkbox';
+		b.checked = hotkey.ctrl;
+		b.onclick = inpblur;
+		b.id = 'extcb4'+rand;
+		l.isCtrl = b;
+		b.li = l;
+		d.appendChild(b);
+		
 		var b = document.createElement('button'); // BTN
 		b.className = 'remove minor';
 		b.setAttribute('style','border-top-width:1px;');
@@ -402,7 +456,8 @@ AllPages.prototype.openstreetmap = function() {
 				enabled: this.isEnabled.checked,
 				tags: v.value,
 				exec_next: this.exec_next.checked,
-				square: this.isSquare.checked
+				square: this.isSquare.checked,
+				ctrl: this.isCtrl.checked
 			};
 		}
 		
@@ -679,18 +734,7 @@ AllPages.prototype.openstreetmap = function() {
 				clearInterval(intv); // Clear
 				si = si[0];
 				
-				var c = 0;
-				for (var hk in id.id_browser_tool_hotkeys) {
-					var kb =
-						d3.
-						keybinding('osm_browser_tool_tags' + c). // keybinding( INDEX )
-						on(
-							iD.ui.cmd('⌘' + hk),
-							id.id_browser_tool_hotkeys_f.bToolChangeTags
-						)
-						d3.select(si).call(kb);
-					c++;
-				}
+				id.id_browser_tool_hotkeys_f.keybind(false); // To search input only. Unnecessary to add to document here.
 			},
 			60
 		);
@@ -699,7 +743,8 @@ AllPages.prototype.openstreetmap = function() {
 	function page__hotkeys(hotkeys_obj) {
 		
 		var context = id;
-		var si = document.getElementsByClassName('preset-search-input')[0];
+		var si = document.getElementsByClassName('preset-search-input');
+		si = (si && si[0]) ? si[0] : false;
 		
 		// Check obj. Set hotkeys_obj.
 		hotkeys_obj = id.id_browser_tool_hotkeys_f.bToolChangeTags_valid(hotkeys_obj);
@@ -718,36 +763,45 @@ AllPages.prototype.openstreetmap = function() {
 			if (si)
 				d3.select(si).call(kb);
 		}
-		// Loop current hotkeys
-		// TODO: SHIFT = expect(iD.ui.cmd('⇧a')).to.eql('Shift+a');
-		var c = 0;
-		for (var hk in hotkeys_obj) {
-			var kb =
-				d3.
-				keybinding('osm_browser_tool_tags' + c). // keybinding( INDEX )
-				on(
-					iD.ui.cmd('⌘' + hk),
-					id.id_browser_tool_hotkeys_f.bToolChangeTags
-					//~ bToolChangeTags // old
-				)
-			d3.select(document).call(kb);
-			if (si)
-				d3.select(si).call(kb);
-			c++;
-		}
+		// Loop current hotkeys, to doc & search input.
+		id.id_browser_tool_hotkeys_f.keybind(true);
 	}
 	function page__add_functions() {
 		id.id_browser_tool_hotkeys_f = {
 			bToolChangeTags_valid: function() {},
-			bToolChangeTags: function() {}
+			bToolChangeTags: function() {},
+			keybind: function() {}
 		};
+		/**
+		 * keybind
+		 */
+		id.id_browser_tool_hotkeys_f.keybind = function(to_document) {
+			var si = document.getElementsByClassName('preset-search-input');
+			si = (si && si[0]) ? si[0] : false;
+			var c = 0;
+			for (var hk in id.id_browser_tool_hotkeys) {//console.log(id.id_browser_tool_hotkeys[ hk ]);
+				var ctrl = (id.id_browser_tool_hotkeys[ hk ].ctrl) ? '⌘' : '';
+				var kb =
+					d3.
+					keybinding('osm_browser_tool_tags' + c). // keybinding( INDEX )
+					on(
+						iD.ui.cmd(ctrl + hk),
+						id.id_browser_tool_hotkeys_f.bToolChangeTags
+					)
+				if (to_document)
+					d3.select(document).call(kb);
+				if (si)
+					d3.select(si).call(kb);
+				c++;
+			}
+		}
 		/**
 		 * bToolChangeTags_valid
 		 * e.g. 'm':{ char: 'm', enabled: true, tags: 'buildings=yes', exec_next: true, square: true }
 		 */
 		id.id_browser_tool_hotkeys_f.bToolChangeTags = function(e) {
 			
-			if (!this.event.ctrlKey && !this.event.metaKey) return; // Must be CTRL.
+			//~ if (!this.event.ctrlKey && !this.event.metaKey) return; // Must be CTRL.
 			
 			var context = id;
 			var char = String.fromCharCode(this.event.keyCode); //console.log(char);
