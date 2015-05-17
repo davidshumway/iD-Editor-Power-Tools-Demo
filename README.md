@@ -4,6 +4,8 @@ For the iD editor on openstreetmap.org. Adds hotkeys for tagging areas. Adds bri
 TODO: Add choice of SHIFT key.
 TODO: Additional image filters.
 
+UPDATE: v 1.23: May 16, 2015: Add "line" to list of allowed entities rather than just "area". Still exclude "point" entity.
+
 UPDATE: v 1.22: May 16, 2015: Example hotkey is now uppercase "M" rather than lowercase "m".
 
 UPDATE: v 1.20: May 16, 2015: Avoid emulating user actions for the most part. Apply tags with e.g. https://gist.github.com/bhousel/0af881a621a2efb83719. Update layout. Allow hotkey modification. Switch from SHIFT to CTRL/META. Override input.preset-search-input event.keypress when necessary.

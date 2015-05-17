@@ -776,8 +776,11 @@ AllPages.prototype.openstreetmap = function() {
 						context.selectedIDs(),
 						context.entity
 					),
-					function(entity) {
-						return entity.geometry(context.graph()) === 'area';
+					function(entity) { // Point or line or area. Select line & area.
+						//~ console.log(entity.geometry(context.graph()));
+						//~ console.log(entity.geometry(context.graph()) === 'area');
+						var t = entity.geometry(context.graph());
+						return  (t === 'area' || t === 'line');
 					}
 				);
 			_.each(
