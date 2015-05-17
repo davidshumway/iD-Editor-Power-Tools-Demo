@@ -41,7 +41,8 @@ AllPages.prototype.openstreetmap = function() {
 		hotkeys: {
 		},
 		hk_notes:
-			'NOTE: For hotkeys hold CTRL plus hotkey to activate (⌘ plus hotkey on Mac). An area must be selected for the hotkey to work correctly. To change an existing area using the hotkeys, the area must be selected first before running the hotkey.'+
+			'NOTE 1: For hotkeys hold CTRL plus hotkey to activate (⌘ plus hotkey on Mac). An area must be selected for the hotkey to work correctly. To change an existing area using the hotkeys, the area must be selected first before running the hotkey.'+
+			'<br>NOTE 2: For the tags field, enter as many tags as desired. Separate each tag by a new line.'+
 			'<br>Area=After hotkey is finished create a new Area.'+
 			'<br>Enable=Whether hotkey is enabled or disabled.'+
 			'<br>Square=After hotkey is finished square the corners of the area.',
@@ -52,16 +53,15 @@ AllPages.prototype.openstreetmap = function() {
 		},
 		sidebar: document.getElementById('sidebar'),
 		intervals: {
-			add_to_page_interval: null, // Wait for search Input to appear
 			interval_images: null, // Lighten images ~1 second interval
-			add_to_page_interval_ms: 500 // Num. seconds for add to page interval
+			interval_images_ms: 500 // Milliseconds
 		}
 	}
 	// init_ls_vars
 	function init_ls_vars() {
 		if (!localStorage[ 'extension_osm_vars2' ] || localStorage[ 'extension_osm_vars2' ] == 'false' || localStorage[ 'extension_osm_vars2' ] == 'undefined') {
 			var x = {
-				'm':{ char: 'm', enabled: true, tags: 'buildings=yes', exec_next: true, square: true }
+				'M':{ char: 'M', enabled: true, tags: 'buildings=yes', exec_next: true, square: true }
 			};
 			localStorage[ 'extension_osm_vars2' ] = JSON.stringify(x);
 		} else {
@@ -161,9 +161,9 @@ AllPages.prototype.openstreetmap = function() {
 				o.dv.d2.innerText = 'TOOLS (hide)';
 				o.dv.d1b.style.display = 'block';
 				this.is_open = true;
-				o.sb[1].style.top = '480px';
-				o.sb[0].style.top = '460px';
-				document.getElementsByClassName('inspector-body')[0].style.top = '520px';
+				o.sb[1].style.top = '580px';
+				o.sb[0].style.top = '560px';
+				document.getElementsByClassName('inspector-body')[0].style.top = '620px';
 			} else {
 				o.dv.d2.innerText = 'TOOLS (show)';
 				o.dv.d1b.style.display = 'none';
@@ -618,7 +618,7 @@ AllPages.prototype.openstreetmap = function() {
 		apply_img_filters(); // Call once to update or begin
 		for (var type in o.iml_types) {
 			if (o.iml_types[ type ] != 1) {
-				o.intervals.interval_images = setInterval(apply_img_filters, 1000);
+				o.intervals.interval_images = setInterval(apply_img_filters, o.intervals.interval_images_ms);
 				break;
 			}
 		}
