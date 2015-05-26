@@ -61,28 +61,37 @@ AllPages.prototype.openstreetmap = function() {
 			interval_images_ms: 500 // Milliseconds
 		}
 	}
+	function ls_mk_key(char) {
+		return char + Math.random() + '' + Math.random();
+	}
 	// init_ls_vars
 	function init_ls_vars() {
-		if (!localStorage[ 'extension_osm_vars2' ] || localStorage[ 'extension_osm_vars2' ] == 'false' || localStorage[ 'extension_osm_vars2' ] == 'undefined') {
+		if (!localStorage[ 'extension_osm_vars3' ] || localStorage[ 'extension_osm_vars3' ] == 'false' || localStorage[ 'extension_osm_vars3' ] == 'undefined') {
+			var r = ls_mk_key('Z');
 			var x = {
-				'z':{ char: 'z', enabled: true, tags: 'building=yes', exec_next: true, square: true, ctrl: false }
+				r: { str_key: r, char: 'Z', enabled: true, tags: 'building=yes', exec_next: true, square: true, ctrl: false }
 			};
-			localStorage[ 'extension_osm_vars2' ] = JSON.stringify(x);
+			//~ var x = {
+				//~ 'Z':{ char: 'Z', enabled: true, tags: 'building=yes', exec_next: true, square: true, ctrl: false }
+			//~ };
+			localStorage[ 'extension_osm_vars3' ] = JSON.stringify(x);
 		} else {
 		}
 		this.valid = function(e) { // return '' on success
 			for (var i in e) {
-				if (!e[i].hasOwnProperty('ctrl')) // Backwards compatibility
-					e[i].ctrl = true;
+				//~ if (!e[i].hasOwnProperty('ctrl')) // Backwards compatibility
+					//~ e[i].ctrl = true;
 				if 	(
-					i.length != 1 || // char length
+					//~ i.length != 1 || // char length
 					!e[i].hasOwnProperty('char') ||
 					!e[i].hasOwnProperty('enabled') ||
 					!e[i].hasOwnProperty('tags') ||
 					!e[i].hasOwnProperty('exec_next') ||
 					!e[i].hasOwnProperty('ctrl') ||
+					!e[i].hasOwnProperty('str_key') ||
 					typeof e[i].char != 'string' ||
 					typeof e[i].tags != 'string' ||
+					typeof e[i].str_key != 'string' ||
 					typeof e[i].enabled != 'boolean' ||
 					typeof e[i].exec_next != 'boolean' ||
 					typeof e[i].square != 'boolean' ||
@@ -102,30 +111,30 @@ AllPages.prototype.openstreetmap = function() {
 				// Check tags
 				var v = e[i].tags;
 				v = v.split('\n');
-				for (var i in v) {
-					var eq = v[i].match(/=/g);
+				for (var j in v) {
+					var eq = v[j].match(/=/g);
 					if (eq == null || eq.length != 1) { // not 1
 						delete e[i];
 						break;
 					}
-					var j = v[i].split('=');
-					if (j[0].indexOf(' ') != -1) { // key contains ' '
+					var k = v[j].split('=');
+					if (k[0].indexOf(' ') != -1) { // key contains ' '
 						delete e[i];
 						break;
 					}
-					if (j[0].length > 255) { // key > 255
+					if (k[0].length > 255) { // key > 255
 						delete e[i];
 						break;
 					}
-					if (j[1].length > 255) { // value > 255
+					if (k[1].length > 255) { // value > 255
 						delete e[i];
 						break;
 					}
-					if (j[0].trim().length == 0) {
+					if (k[0].trim().length == 0) {
 						delete e[i];
 						break;
 					}
-					if (j[1].trim().length == 0) {
+					if (k[1].trim().length == 0) {
 						delete e[i];
 						break;
 					}
@@ -133,9 +142,9 @@ AllPages.prototype.openstreetmap = function() {
 			}
 			return e;
 		}
-		o.hotkeys = this.valid(JSON.parse( localStorage[ 'extension_osm_vars2' ] ));
+		o.hotkeys = this.valid(JSON.parse( localStorage[ 'extension_osm_vars3' ] ));
 		// Update
-		localStorage[ 'extension_osm_vars2' ] = JSON.stringify(o.hotkeys);
+		localStorage[ 'extension_osm_vars3' ] = JSON.stringify(o.hotkeys);
 	}
 	/**
 	 * function tools_menu_init
@@ -163,9 +172,12 @@ AllPages.prototype.openstreetmap = function() {
 		sidebar.insertBefore(o.dv.d1, sidebar.firstChild);
 		
 		// Open / close button
+		var d = new Date(); // Show three day notice
+		var upd = (d.getFullYear() == 2015 && d.getDate() <= 24 && d.getMonth() == 4) ? ' (Updated!)' : '';
 		o.dv.d2 = document.createElement('div');
 		o.dv.d2.setAttribute('style','width:100%;height:20px;text-align:center;cursor:pointer;font-family:courier;border:3px solid #a2a2a2;background-color:white;');
-		o.dv.d2.innerText = 'TOOLS (show)';
+		o.dv.d2.innerText = 'TOOLS (show)' + upd;
+		o.dv.d2.title = 'TOOLS (show)' + upd;
 		o.dv.d2.id = 'id_browser_tools_div';
 		o.dv.d2.is_open = false;
 		o.dv.d1.appendChild(o.dv.d2);
@@ -178,7 +190,7 @@ AllPages.prototype.openstreetmap = function() {
 				o.sb[0].style.top = '560px';
 				document.getElementsByClassName('inspector-body')[0].style.top = '620px';
 			} else {
-				o.dv.d2.innerText = 'TOOLS (show)';
+				o.dv.d2.innerText = o.dv.d2.title; // show
 				o.dv.d1b.style.display = 'none';
 				this.is_open = false;
 				o.sb[1].style.top = '80px';
@@ -242,7 +254,7 @@ AllPages.prototype.openstreetmap = function() {
 				// If constant
 				//~ init_ls_vars(); // Write change
 				//~ o.iml_types[ this.iml_type ] = this.value;
-				//~ localStorage[ 'extension_osm_vars2' ] = JSON.stringify(ls_vars); // Update
+				//~ localStorage[ 'extension_osm_vars3' ] = JSON.stringify(ls_vars); // Update
 				//~ init_sliders(); // Re-init
 			}, false);
 			dv.appendChild(x);
@@ -262,6 +274,7 @@ AllPages.prototype.openstreetmap = function() {
 	var hk_li = function(hotkey, parent_ul) {
 		
 		hotkey = (hotkey) ? hotkey : {
+			str_key: '',
 			char: '',
 			enabled: true,
 			tags: '',
@@ -271,8 +284,8 @@ AllPages.prototype.openstreetmap = function() {
 		var rand = Math.random();
 		
 		function deleteRow() {
-			delete o.hotkeys[ this.char ];
-			this.parent_ul.render();
+			delete o.hotkeys[ this.li.hotkey.str_key ];
+			this.li.parent_ul.render();
 		}
 		function inpblur() {
 			var li = this.li,
@@ -287,14 +300,48 @@ AllPages.prototype.openstreetmap = function() {
 			v.style.width = '100%';
 			
 			k.value = k.value.charAt(0);
+			hk_keyup(k);// Ensure this
 			var vl = p.validate(li);
 			if (vl == '') {
-				o.hotkeys[ k.value ] = li.obj();
-				p.render(); // Render
-			} else {console.log(vl);
+				// Has ls key?
+				var str_key = '';
+				// Ls key?
+				if (li.hotkey.str_key == '') {
+					li.hotkey.str_key = ls_mk_key(k.value);
+				}
+				// Has correct ls key? Correct is char[0] == k.value.
+				if (li.hotkey.str_key.charAt(0) != k.value) {
+					li.hotkey.str_key = ls_mk_key(k.value);
+				}
+				// disable_multi_key
+				disable_multi_key(li);
+				// Set
+				o.hotkeys[ li.hotkey.str_key ] = li.obj();
+				// Render
+				p.render();
+			} else {//console.log(vl);
 				li.div_notice.style.maxHeight = '100px';
 				li.div_notice.style.opacity = '1';
 				li.div_notice.innerText = vl;
+			}
+		}
+		// If this hk is enabled then disable all other hotkeys
+		// with the same char.
+		function disable_multi_key(li) {
+			var hk_obj = li.obj();
+			var char = hk_obj.char;
+			var str_key = hk_obj.str_key;
+			var enabled = hk_obj.enabled;
+			if (!enabled) {
+				return;// Stop here
+			}
+			for (var tmp_str_key in o.hotkeys) {
+				if (str_key == tmp_str_key) {
+					continue; // Skip this
+				}
+				if (char == o.hotkeys[ tmp_str_key ].char) {
+					o.hotkeys[ tmp_str_key ].enabled = false;
+				}
 			}
 		}
 		function keyfocus() {
@@ -302,12 +349,15 @@ AllPages.prototype.openstreetmap = function() {
 			this.style.height = '160px';
 			this.style.width = '80%';
 		}
-		function hk_keyup(e) {
-			this.value = this.value.toUpperCase();
+		function hk_keyup(inp) {
+			inp.value = inp.value.toUpperCase();
 			// If non-CTRL key then replace chars.
-			if (!this.li.isCtrl.checked) {
-				this.value = this.value.replace(/^[WFBH/]$/, '');
+			if (!inp.li.isCtrl.checked) {
+				inp.value = inp.value.replace(/^[WFBH/]$/, '');
 			}
+		}
+		function hk_keyup_ev(e) {
+			hk_keyup(this);
 		}
 		
 		var l = document.createElement('li'); // LI
@@ -315,6 +365,13 @@ AllPages.prototype.openstreetmap = function() {
 		l.hotkey = hotkey;
 		l.char = hotkey.char;
 		l.parent_ul = parent_ul;
+		l.input_key = null;//Set
+		l.input_value = null;//Set
+		l.exec_next = null;//Set
+		l.isEnabled = null;//Set
+		l.isSquare = null;//Set
+		l.isCtrl = null;//Set
+		l.div_notice = null;//Set
 		
 		var d = document.createElement('div'); // DIV
 		d.className = 'key-wrap';
@@ -326,7 +383,7 @@ AllPages.prototype.openstreetmap = function() {
 		i.maxLength = 1;
 		i.value = hotkey.char;
 		i.onblur = inpblur;
-		i.onkeyup = hk_keyup;
+		i.onkeyup = hk_keyup_ev;
 		i.placeholder = 'key';
 		i.li = l;
 		l.input_key = i;
@@ -436,8 +493,10 @@ AllPages.prototype.openstreetmap = function() {
 		var s = document.createElement('span'); // SPAN
 		s.className = 'icon delete';
 		b.appendChild(s);
-		b.char = hotkey.char;
-		b.parent_ul = parent_ul;
+		//~ b.hotkey = hotkey.str_key;
+		//~ b.char = hotkey.char;
+		//~ b.parent_ul = parent_ul;
+		b.li = l;
 		b.onclick = deleteRow;
 		l.appendChild(b);
 		
@@ -452,6 +511,7 @@ AllPages.prototype.openstreetmap = function() {
 			var k = this.input_key,
 				v = this.input_value;
 			return {
+				str_key: this.hotkey.str_key,
 				char: k.value,
 				enabled: this.isEnabled.checked,
 				tags: v.value,
@@ -483,21 +543,25 @@ AllPages.prototype.openstreetmap = function() {
 			}
 			o.hotkeys = sorted;
 		}
+		// Render
 		c.render = function() {
-			this.sortKeys(); // Sort
+			// Sort
+			this.sortKeys();
 			// Clear
 			this.innerHTML = ''; // `this` is UL
-			var li;
 			// Loop add LIs
-			for (var char in o.hotkeys) {
-				var obj = o.hotkeys[ char ];
+			var li;
+			for (var str_key in o.hotkeys) {
+				var obj = o.hotkeys[ str_key ];
 				li = new hk_li(obj, this);
 				this.appendChild(li);
 			}
 			if (li)
 				li.focus();
+			// Save
 			this.save();
 		}
+		// Save
 		c.save = function() {
 			// Remove
 			var x = this.getElementsByTagName('li');
@@ -513,7 +577,8 @@ AllPages.prototype.openstreetmap = function() {
 			for (var i = x.length-1; i>=0 ; i--) {
 				var li = x[i];
 				var hk = li.obj();
-				o.hotkeys[ hk.char ] = hk;
+				var key = li.hotkey.str_key;
+				o.hotkeys[ key ] = hk;
 			}
 			this.ls(); // localStorage
 			this.add_to_page() // add to page JS
@@ -527,77 +592,22 @@ AllPages.prototype.openstreetmap = function() {
 			p_init_hotkeys();
 			
 			// TARGET IS target: input.preset-search-input
-			
 			return;
-			// DEBUG
-			// This fires each time a new area is created and the search input is autofocused. However, the parentNode is also removed.
-			// So this is temporary. However, `parentNode.parentNode` is constant. `parentNode.parentNode` fires three times `DOMNodeRemoved`
-			// events when search input is autofocused!
-			// A = `parentNode.parentNode` is document.getElementsByClassName('preset-list-pane pane')[0].
-			// `A` does not exist on page init. `A`.parentNode=`B`=document.getElementsByClassName('panewrap')[0];
-			// `B` does not exist on page init. `B`.parentNode=`C`=document.getElementsByClassName('inspector-wrap')[0];
-			// `C` does exist on page init (document.getElementsByClassName('inspector-wrap')[0]).
-			//
-			// document.getElementsByClassName('preset-search-input')[0].parentNode.addEventListener('DOMNodeRemoved',function() {alert('x');}, false);
-			//
-			//
-			//~ 
-			//~ var last = 0;
-			//~ setInterval(function() {
-				//~ var x = document.getElementsByClassName('preset-search-input');
-				//~ if (x && x[0] && last == 0) {
-					//~ last = 1;
-					//~ console.log('`preset-search-input` exists!');
-					//~ p_init_hotkeys();// Add keypress to page
-				//~ } else if ((!x || !x[0]) && last == 1) {
-					//~ last = 0;
-					//~ console.log('`preset-search-input` is gone!');
-				//~ }
-			//~ }, o.intervals.add_to_page_interval_ms);
-			//return;
-			//~ 
-			//~ // And for search input...
-			//~ //
-			//~ //
-			//~ console.log('o.intervals.add_to_page_interval is:'); // Debug
-			//~ console.log(o.intervals.add_to_page_interval);
-			//~ var x = document.getElementsByClassName('preset-search-input');
-			//~ if (x && x[0]) {
-				//~ console.log('`preset-search-input` exists!');
-				//~ if (o.intervals.add_to_page_interval)
-					//~ clearInterval(o.intervals.add_to_page_interval);// Clear
-				//~ // Old
-				//p_init_preset();// Add preset list to page
-			//~ } else {
-				//~ // There is only one interval waiting to add to page. If
-				//~ // the add_to_page function is called again by a user then
-				//~ // it will overwrite this interval.
-				//~ o.intervals.add_to_page_interval = setInterval(function() {
-					//~ var x = document.getElementsByClassName('preset-search-input');
-					//~ if (x && x[0]) {
-						//~ console.log('`preset-search-input` exists!');
-						//~ clearInterval(o.intervals.add_to_page_interval);
-						//~ p_init_hotkeys();// Add keypress to page
-					//~ }
-				//~ }, o.intervals.add_to_page_interval_ms);
-				//~ 
-				//~ console.log('o.intervals.add_to_page_interval is (now):'); // Debug
-				//~ console.log(o.intervals.add_to_page_interval);
-			//~ }
 		}
 		c.ls = function() {
 			// Update
-			localStorage[ 'extension_osm_vars2' ] = JSON.stringify(o.hotkeys);
+			localStorage[ 'extension_osm_vars3' ] = JSON.stringify(o.hotkeys);
 		}
 		c.validate = function(li) {
 			var v = li.input_value,
 				k = li.input_key,
 				p = li.parent_ul;
 			if (k.value == '') {
-				if (li.char != '' && o.hotkeys.hasOwnProperty(li.char))
-					delete o.hotkeys[ li.char ];
+				delete o.hotkeys[ li.hotkey.str_key ];
 				p.render();
 				return;
+				//~ if (li.char != '' && o.hotkeys.hasOwnProperty(li.char))
+					//~ delete o.hotkeys[ li.char ];
 			}
 			if (v.value == '') return ''; //'Tag is empty!';
 			v = v.value.trim().split('\n');
@@ -628,6 +638,8 @@ AllPages.prototype.openstreetmap = function() {
 			}
 			return '';
 		}
+		// emptyRows
+		// Remove rows where key & value are blank.
 		c.emptyRows = function() {
 			var rows = this.getElementsByTagName('li');
 			for (var i = rows.length-1; i>0; i--) {
@@ -637,10 +649,12 @@ AllPages.prototype.openstreetmap = function() {
 				}
 			}
 		}
+		// deleteRow
 		c.deleteRow = function(row) {
-			delete o.hotkeys[ row.char ];
+			delete o.hotkeys[ row.str_key ];
 			parent_ul.render();
 		}
+		// addRow
 		c.addRow = function() {
 			var p = this.parent_ul;
 			p.emptyRows();
@@ -648,7 +662,7 @@ AllPages.prototype.openstreetmap = function() {
 			p.appendChild(li);
 			li.input_key.focus();
 		}
-		// Render
+		// Initial render
 		c.render();
 		
 		// Add btn
@@ -716,7 +730,6 @@ AllPages.prototype.openstreetmap = function() {
 	
 	// Add hotkeys to search input. Does not remove hotkeys.
 	function page__si_hotkeys() {
-		//~ console.log('Run page__si_hotkeys()');
 		if (!id.hasOwnProperty('id_browser_tool_hotkeys')) return;// Stop
 		if (!id.hasOwnProperty('id_browser_tool_hotkeys_f')) return;// Stop
 		if (!id.id_browser_tool_hotkeys_f.hasOwnProperty('bToolChangeTags')) return;// Stop
@@ -733,8 +746,8 @@ AllPages.prototype.openstreetmap = function() {
 				}
 				clearInterval(intv); // Clear
 				si = si[0];
-				
-				id.id_browser_tool_hotkeys_f.keybind(false); // To search input only. Unnecessary to add to document here.
+				// To search input only. Unnecessary to add to document here.
+				id.id_browser_tool_hotkeys_f.keybind(false);
 			},
 			60
 		);
@@ -779,13 +792,15 @@ AllPages.prototype.openstreetmap = function() {
 			var si = document.getElementsByClassName('preset-search-input');
 			si = (si && si[0]) ? si[0] : false;
 			var c = 0;
-			for (var hk in id.id_browser_tool_hotkeys) {//console.log(id.id_browser_tool_hotkeys[ hk ]);
-				var ctrl = (id.id_browser_tool_hotkeys[ hk ].ctrl) ? '⌘' : '';
+			for (var str_key in id.id_browser_tool_hotkeys) {//console.log(id.id_browser_tool_hotkeys[ hk ]);
+				var hk = id.id_browser_tool_hotkeys[ str_key ];
+				var ctrl = (hk.ctrl) ? '⌘' : '';
+				var char = hk.char.toUpperCase();
 				var kb =
 					d3.
 					keybinding('osm_browser_tool_tags' + c). // keybinding( INDEX )
 					on(
-						iD.ui.cmd(ctrl + hk),
+						iD.ui.cmd(ctrl + char),
 						id.id_browser_tool_hotkeys_f.bToolChangeTags
 					)
 				if (to_document)
@@ -804,15 +819,25 @@ AllPages.prototype.openstreetmap = function() {
 			//~ if (!this.event.ctrlKey && !this.event.metaKey) return; // Must be CTRL.
 			
 			var context = id;
-			var char = String.fromCharCode(this.event.keyCode); //console.log(char);
-			var hk_obj = id.id_browser_tool_hotkeys;
-			if (!hk_obj.hasOwnProperty( char )) {
-				return;
-			}
-			hk_obj = hk_obj[ char ];
-			
-			// Enabled?
-			if (!hk_obj.enabled) return;
+			var char = String.fromCharCode(this.event.keyCode);console.log(char);
+			var hk_obj = id.id_browser_tool_hotkeys;console.log(hk_obj);
+			var found;
+			for (var str_key in hk_obj) {
+				var hk_char = hk_obj[ str_key ].char;
+				var enabled = hk_obj[ str_key ].enabled;
+				if (hk_char == char && enabled) {
+					found = true;
+					hk_obj = hk_obj[ str_key ];
+					break;
+				}
+			}console.log(found);
+			//~ if (!hk_obj.hasOwnProperty( char )) {
+				//~ return;
+			//~ }
+			//~ hk_obj = hk_obj[ char ];
+			//~ 
+			//~ // Enabled?
+			//~ if (!hk_obj.enabled) return;
 			
 			var actions = [];
 			var addTags = {}; // e.g. { building: 'yes' };
@@ -879,17 +904,17 @@ AllPages.prototype.openstreetmap = function() {
 		 * bToolChangeTags_valid
 		 */
 		id.id_browser_tool_hotkeys_f.bToolChangeTags_valid = function(e) {
-		//~ function bToolChangeTags_valid(e) {
-		
 			for (var i in e) {
 				if 	(
-					i.length != 1 || // char length
+					//~ i.length != 1 || // char length
 					!e[i].hasOwnProperty('char') ||
 					!e[i].hasOwnProperty('enabled') ||
 					!e[i].hasOwnProperty('tags') ||
 					!e[i].hasOwnProperty('exec_next') ||
+					!e[i].hasOwnProperty('str_key') ||
 					typeof e[i].char != 'string' ||
 					typeof e[i].tags != 'string' ||
+					typeof e[i].str_key != 'string' ||
 					typeof e[i].enabled != 'boolean' ||
 					typeof e[i].exec_next != 'boolean' ||
 					typeof e[i].square != 'boolean' ||
@@ -968,15 +993,12 @@ AllPages.prototype.openstreetmap = function() {
  * 
  *  
 **/
-var ih;
 if (document.readyState == "complete" || document.readyState == "interactive") {
-	ih = document.body.innerHTML;
 	load();
 }
 else {
 	document.onreadystatechange = function () {
 		if (document.readyState == "complete" || document.readyState == "interactive") {
-			ih = document.body.innerHTML;
 			load();
 		}
 	}
