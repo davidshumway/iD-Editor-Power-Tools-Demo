@@ -1,7 +1,8 @@
-# OSM-iD-Browser-Tools
-For the iD editor on openstreetmap.org. Adds hotkeys for tagging areas. Adds brightness & contrast tool for satellite imagery. Adds a few other productivity tools.
+For the iD editor on openstreetmap.org. Adds ability to create hotkeys for tagging areas. Adds brightness & contrast tool for satellite imagery.
 
 TODO: Additional image filters.
+
+UPDATE: v 1.32: May 21, 2015: Add ability to have more than one hotkey with same character key.
 
 UPDATE: v 1.30: May 16, 2015: Add ability to hotkey non-CTRL/⌘ keys (key only, no CTRL).
 
