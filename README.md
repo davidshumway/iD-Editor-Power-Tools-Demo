@@ -2,6 +2,8 @@ For the iD editor on openstreetmap.org. Adds ability to create hotkeys for taggi
 
 TODO: Additional image filters.
 
+License: GNU GENERAL PUBLIC LICENSE
+
 UPDATE: v 1.32: May 21, 2015: Add ability to have more than one hotkey with same character key.
 
 UPDATE: v 1.30: May 16, 2015: Add ability to hotkey non-CTRL/⌘ keys (key only, no CTRL).
