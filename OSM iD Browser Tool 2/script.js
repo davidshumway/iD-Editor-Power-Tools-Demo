@@ -44,7 +44,7 @@ AllPages.prototype.openstreetmap = function() {
 			'+'+
 			'<br>Area: After hotkey is finished create a new Area.'+
 			'<br>Enable: Whether hotkey is enabled or disabled.'+
-			'<br>Square: After hotkey is finished square the corners of the area.'+
+			'<br>Square/circle: After hotkey is finished square/circle the area.'+
 			'<br>CTRL/⌘: Whether hotkey is single key or key + CTRL (⌘ on Mac) combination.'+
 			'<br>NOTE 1: An area must be selected for the hotkey to work correctly. To change an existing area using hotkeys, the area must first be selected.'+
 			'<br>NOTE 2: For the tags field, enter as many tags as desired. Separate each tag by a new line.'+
@@ -69,7 +69,7 @@ AllPages.prototype.openstreetmap = function() {
 		if (!localStorage[ 'extension_osm_vars3' ] || localStorage[ 'extension_osm_vars3' ] == 'false' || localStorage[ 'extension_osm_vars3' ] == 'undefined') {
 			var r = ls_mk_key('Z');
 			var x = {
-				r: { str_key: r, char: 'Z', enabled: true, tags: 'building=yes', exec_next: true, square: true, ctrl: false }
+				r: { str_key: r, char: 'Z', enabled: true, tags: 'building=yes', exec_next: true, square: false, circle: true, ctrl: false }
 			};
 			//~ var x = {
 				//~ 'Z':{ char: 'Z', enabled: true, tags: 'building=yes', exec_next: true, square: true, ctrl: false }
@@ -95,6 +95,7 @@ AllPages.prototype.openstreetmap = function() {
 					typeof e[i].enabled != 'boolean' ||
 					typeof e[i].exec_next != 'boolean' ||
 					typeof e[i].square != 'boolean' ||
+					typeof e[i].circle != 'boolean' ||
 					typeof e[i].ctrl != 'boolean' ||
 					e[i].char.length != 1 ||
 					e[i].tags.length == 0
@@ -279,7 +280,8 @@ AllPages.prototype.openstreetmap = function() {
 			enabled: true,
 			tags: '',
 			exec_next: true,
-			square: true
+			square: true,
+			circle: false
 		};
 		var rand = Math.random();
 		
@@ -378,7 +380,7 @@ AllPages.prototype.openstreetmap = function() {
 		d.setAttribute('style','width: 8%;');
 		l.appendChild(d);
 		var i = document.createElement('input'); // INPUT
-		i.setAttribute('style','padding-left: 10px; border: 1px solid #CCC; width:100%;');
+		i.setAttribute('style','text-align:center; border: 1px solid #CCC; width:100%;');
 		i.className = 'key combobox-input';
 		i.maxLength = 1;
 		i.value = hotkey.char;
@@ -396,7 +398,7 @@ AllPages.prototype.openstreetmap = function() {
 		var i = document.createElement('textarea'); // INPUT
 		i.className = 'value combobox-input';
 		i.setAttribute('style',
-			'border-radius: 0;border: 1px solid #CCC; padding:5px 10px;'+
+			'border-radius: 0;border: 1px solid #CCC; padding:5px 5px;'+
 			'border-width:1px; height:31px; resize:none; overflow:hidden; position:inherit; width:100%; z-index:100;'
 		);
 		i.value = hotkey.tags;
@@ -409,7 +411,7 @@ AllPages.prototype.openstreetmap = function() {
 		
 		var d = document.createElement('div'); // DIV
 		d.className = 'input-wrap-position';
-		d.setAttribute('style','width:14%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
+		d.setAttribute('style','width:10%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
 		l.appendChild(d);
 		var v = document.createElement('label'); // LABEL
 		v.setAttribute('style','cursor:pointer;');
@@ -429,7 +431,7 @@ AllPages.prototype.openstreetmap = function() {
 		
 		var d = document.createElement('div'); // DIV
 		d.className = 'input-wrap-position';
-		d.setAttribute('style','width:14%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
+		d.setAttribute('style','width:10%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
 		l.appendChild(d);
 		var v = document.createElement('label'); // LABEL
 		v.setAttribute('style','cursor:pointer;');
@@ -449,7 +451,7 @@ AllPages.prototype.openstreetmap = function() {
 		
 		var d = document.createElement('div'); // DIV
 		d.className = 'input-wrap-position';
-		d.setAttribute('style','width:14%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
+		d.setAttribute('style','width:10%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
 		l.appendChild(d);
 		var v = document.createElement('label'); // LABEL
 		v.setAttribute('style','cursor:pointer;');
@@ -466,6 +468,29 @@ AllPages.prototype.openstreetmap = function() {
 		l.isSquare = b;
 		b.li = l;
 		d.appendChild(b);
+
+
+		//added section for creating a circle: dk
+		var d = document.createElement('div'); // DIV
+		d.className = 'input-wrap-position';
+		d.setAttribute('style','width:10%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
+		l.appendChild(d);
+		var v = document.createElement('label'); // LABEL
+		v.setAttribute('style','cursor:pointer;');
+		v.htmlFor = 'extcb3'+rand;
+		v.innerText = 'Circle';
+		d.appendChild(v);
+		d.appendChild(document.createElement('br')); // BR
+		var b = document.createElement('input'); // CHECKBOX
+		b.setAttribute('style','height:initial; margin:0; margin-left:35%;');
+		b.type = 'checkbox';
+		b.checked = hotkey.circle;
+		b.onclick = inpblur;
+		b.id = 'extcb3'+rand;
+		l.isCircle = b;
+		b.li = l;
+		d.appendChild(b);
+
 		
 		var d = document.createElement('div'); // DIV
 		d.className = 'input-wrap-position';
@@ -487,11 +512,13 @@ AllPages.prototype.openstreetmap = function() {
 		b.li = l;
 		d.appendChild(b);
 		
+		
 		var b = document.createElement('button'); // BTN
 		b.className = 'remove minor';
 		b.setAttribute('style','border-top-width:1px;');
 		var s = document.createElement('span'); // SPAN
 		s.className = 'icon delete';
+		s.innerText = 'X';
 		b.appendChild(s);
 		//~ b.hotkey = hotkey.str_key;
 		//~ b.char = hotkey.char;
@@ -499,6 +526,7 @@ AllPages.prototype.openstreetmap = function() {
 		b.li = l;
 		b.onclick = deleteRow;
 		l.appendChild(b);
+
 		
 		var d = document.createElement('div'); // DIV // NOTICE
 		d.className = 'tag-reference-body cf';
@@ -517,6 +545,7 @@ AllPages.prototype.openstreetmap = function() {
 				tags: v.value,
 				exec_next: this.exec_next.checked,
 				square: this.isSquare.checked,
+				circle: this.isCircle.checked,
 				ctrl: this.isCtrl.checked
 			};
 		}
@@ -884,6 +913,12 @@ AllPages.prototype.openstreetmap = function() {
 							//~ )
 						//~ );
 					}
+					if (hk_obj.circle) {
+						actions.push(
+							iD.actions.Circularize(entity.id, context.projection)
+						);
+					}
+
 				}
 			);
 			if (actions.length) {
@@ -918,6 +953,7 @@ AllPages.prototype.openstreetmap = function() {
 					typeof e[i].enabled != 'boolean' ||
 					typeof e[i].exec_next != 'boolean' ||
 					typeof e[i].square != 'boolean' ||
+					typeof e[i].circle != 'boolean' ||
 					e[i].char.length != 1 ||
 					e[i].tags.length == 0
 					)
