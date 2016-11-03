@@ -42,9 +42,9 @@ AllPages.prototype.openstreetmap = function() {
 		},
 		hk_notes:
 			'+'+
-			'<br>Area: After hotkey is finished create a new Area.'+
+			'<br>Area/Line: After hotkey is finished create a new Area/Line.'+
 			'<br>Enable: Whether hotkey is enabled or disabled.'+
-			'<br>Square/circle: After hotkey is finished square/circle the area.'+
+			'<br>Square/Circle: After hotkey is finished square/circle the area.'+
 			'<br>CTRL/⌘: Whether hotkey is single key or key + CTRL (⌘ on Mac) combination.'+
 			'<br>NOTE 1: An area must be selected for the hotkey to work correctly. To change an existing area using hotkeys, the area must first be selected.'+
 			'<br>NOTE 2: For the tags field, enter as many tags as desired. Separate each tag by a new line.'+
@@ -69,7 +69,7 @@ AllPages.prototype.openstreetmap = function() {
 		if (!localStorage[ 'extension_osm_vars3' ] || localStorage[ 'extension_osm_vars3' ] == 'false' || localStorage[ 'extension_osm_vars3' ] == 'undefined') {
 			var r = ls_mk_key('Z');
 			var x = {
-				r: { str_key: r, char: 'Z', enabled: true, tags: 'building=yes', exec_next: true, square: false, circle: true, ctrl: false }
+				r: { str_key: r, char: 'Z', enabled: true, tags: 'building=yes', exec_next: true, exec_next_line: false, square: false, circle: true, ctrl: false }
 			};
 			//~ var x = {
 				//~ 'Z':{ char: 'Z', enabled: true, tags: 'building=yes', exec_next: true, square: true, ctrl: false }
@@ -87,6 +87,7 @@ AllPages.prototype.openstreetmap = function() {
 					!e[i].hasOwnProperty('enabled') ||
 					!e[i].hasOwnProperty('tags') ||
 					!e[i].hasOwnProperty('exec_next') ||
+					!e[i].hasOwnProperty('exec_next_line') ||
 					!e[i].hasOwnProperty('ctrl') ||
 					!e[i].hasOwnProperty('str_key') ||
 					typeof e[i].char != 'string' ||
@@ -94,6 +95,7 @@ AllPages.prototype.openstreetmap = function() {
 					typeof e[i].str_key != 'string' ||
 					typeof e[i].enabled != 'boolean' ||
 					typeof e[i].exec_next != 'boolean' ||
+					typeof e[i].exec_next_line != 'boolean' ||
 					typeof e[i].square != 'boolean' ||
 					typeof e[i].circle != 'boolean' ||
 					typeof e[i].ctrl != 'boolean' ||
@@ -280,6 +282,7 @@ AllPages.prototype.openstreetmap = function() {
 			enabled: true,
 			tags: '',
 			exec_next: true,
+			exec_next_line: false,
 			square: true,
 			circle: false
 		};
@@ -290,11 +293,28 @@ AllPages.prototype.openstreetmap = function() {
 			this.li.parent_ul.render();
 		}
 		function inpblur() {
+
+			// Mutually Exclusive Geometry change checkboxes (circle or square)
+			if (this.id[5]==3) {  //test if square checkbox selected
+				document.getElementById("extcb5"+this.id.substr(6)).checked=false;
+			} else if (this.id[5]==5) {  //test if circle checkbox selected
+				document.getElementById("extcb3"+this.id.substr(6)).checked=false;
+			}
+
+			// Mutually Exclusive next executed (Area or Line) 
+			if (this.id[5]==1) {  //test if Area is selected, turn off Line
+				document.getElementById("extcb6"+this.id.substr(6)).checked=false;					
+			} else if (this.id[5]==6) {  //test if Line is selected, turn off Area
+				document.getElementById("extcb1"+this.id.substr(6)).checked=false;
+				document.getElementById("extcb3"+this.id.substr(6)).checked=false;
+				document.getElementById("extcb5"+this.id.substr(6)).checked=false;
+			}
+
+
 			var li = this.li,
 				k = li.input_key,
 				v = li.input_value,
 				p = li.parent_ul;
-
 			k.value = k.value.trim();
 			v.value = v.value.trim();
 			v.style.height = '31px';
@@ -370,14 +390,16 @@ AllPages.prototype.openstreetmap = function() {
 		l.input_key = null;//Set
 		l.input_value = null;//Set
 		l.exec_next = null;//Set
+		l.exec_next_line = null;
 		l.isEnabled = null;//Set
 		l.isSquare = null;//Set
+		l.isCircle = null;
 		l.isCtrl = null;//Set
 		l.div_notice = null;//Set
 		
 		var d = document.createElement('div'); // DIV
 		d.className = 'key-wrap';
-		d.setAttribute('style','width: 8%;');
+		d.setAttribute('style','width: 6%;');
 		l.appendChild(d);
 		var i = document.createElement('input'); // INPUT
 		i.setAttribute('style','text-align:center; border: 1px solid #CCC; width:100%;');
@@ -408,11 +430,39 @@ AllPages.prototype.openstreetmap = function() {
 		i.li = l;
 		l.input_value = i;
 		d.appendChild(i);
+
+
+
+		var d = document.createElement('div'); // DIV
+		d.className = 'input-wrap-position';
+		d.setAttribute('style','width:12%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
+		l.appendChild(d);
+		var v = document.createElement('label'); // LABEL
+		v.setAttribute('style','cursor:pointer;');
+		v.htmlFor = 'extcb2'+rand;
+		v.innerText = 'Enable';
+		d.appendChild(v);
+		d.appendChild(document.createElement('br')); // BR
+		var b = document.createElement('input'); // CHECKBOX
+		b.setAttribute('style','height:initial; margin:0; margin-left:35%;');
+		b.type = 'checkbox';
+		b.checked = hotkey.enabled;
+		b.onclick = inpblur;
+		b.id = 'extcb2'+rand;
+		l.isEnabled = b;
+		b.li = l;
+		d.appendChild(b);
+
+
+		var e = document.createElement('div'); // DIV
+		e.className = 'input-wrap-position';
+		e.setAttribute('style','width:16%; height:31px; border:1px solid black; border-right:0px;');
+		l.appendChild(e);
 		
 		var d = document.createElement('div'); // DIV
 		d.className = 'input-wrap-position';
-		d.setAttribute('style','width:10%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
-		l.appendChild(d);
+		d.setAttribute('style','width:50%; height:29px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
+		e.appendChild(d);
 		var v = document.createElement('label'); // LABEL
 		v.setAttribute('style','cursor:pointer;');
 		v.htmlFor = 'extcb1'+rand;
@@ -431,28 +481,34 @@ AllPages.prototype.openstreetmap = function() {
 		
 		var d = document.createElement('div'); // DIV
 		d.className = 'input-wrap-position';
-		d.setAttribute('style','width:10%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
-		l.appendChild(d);
+		d.setAttribute('style','width:50%; height:29px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
+		e.appendChild(d);
 		var v = document.createElement('label'); // LABEL
 		v.setAttribute('style','cursor:pointer;');
-		v.htmlFor = 'extcb2'+rand;
-		v.innerText = 'Enable';
+		v.htmlFor = 'extcb6'+rand;
+		v.innerText = 'Line';
 		d.appendChild(v);
 		d.appendChild(document.createElement('br')); // BR
 		var b = document.createElement('input'); // CHECKBOX
 		b.setAttribute('style','height:initial; margin:0; margin-left:35%;');
 		b.type = 'checkbox';
-		b.checked = hotkey.enabled;
+		b.checked = hotkey.exec_next_line;
 		b.onclick = inpblur;
-		b.id = 'extcb2'+rand;
-		l.isEnabled = b;
+		b.id = 'extcb6'+rand;
+		l.exec_next_line = b;
 		b.li = l;
 		d.appendChild(b);
+
+		
+		var e = document.createElement('div'); // DIV
+		e.className = 'input-wrap-position';
+		e.setAttribute('style','width:22%; height:31px; border:1px solid black;');
+		l.appendChild(e);
 		
 		var d = document.createElement('div'); // DIV
 		d.className = 'input-wrap-position';
-		d.setAttribute('style','width:10%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
-		l.appendChild(d);
+		d.setAttribute('style','width:55%; height:29px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
+		e.appendChild(d);
 		var v = document.createElement('label'); // LABEL
 		v.setAttribute('style','cursor:pointer;');
 		v.htmlFor = 'extcb3'+rand;
@@ -469,15 +525,14 @@ AllPages.prototype.openstreetmap = function() {
 		b.li = l;
 		d.appendChild(b);
 
-
 		//added section for creating a circle: dk
 		var d = document.createElement('div'); // DIV
 		d.className = 'input-wrap-position';
-		d.setAttribute('style','width:10%; height:31px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
-		l.appendChild(d);
+		d.setAttribute('style','width:45%; height:29px; border:1px solid #CCC; padding:0; line-height:1.2em; text-align:center; background-color:#fff;');
+		e.appendChild(d);
 		var v = document.createElement('label'); // LABEL
 		v.setAttribute('style','cursor:pointer;');
-		v.htmlFor = 'extcb3'+rand;
+		v.htmlFor = 'extcb5'+rand;
 		v.innerText = 'Circle';
 		d.appendChild(v);
 		d.appendChild(document.createElement('br')); // BR
@@ -486,7 +541,7 @@ AllPages.prototype.openstreetmap = function() {
 		b.type = 'checkbox';
 		b.checked = hotkey.circle;
 		b.onclick = inpblur;
-		b.id = 'extcb3'+rand;
+		b.id = 'extcb5'+rand;
 		l.isCircle = b;
 		b.li = l;
 		d.appendChild(b);
@@ -515,7 +570,7 @@ AllPages.prototype.openstreetmap = function() {
 		
 		var b = document.createElement('button'); // BTN
 		b.className = 'remove minor';
-		b.setAttribute('style','border-top-width:1px;');
+		b.setAttribute('style','width:5%;border-top-width:1px;right:0px;');
 		var s = document.createElement('span'); // SPAN
 		s.className = 'icon delete';
 		s.innerText = 'X';
@@ -544,6 +599,7 @@ AllPages.prototype.openstreetmap = function() {
 				enabled: this.isEnabled.checked,
 				tags: v.value,
 				exec_next: this.exec_next.checked,
+				exec_next_line: this.exec_next_line.checked,
 				square: this.isSquare.checked,
 				circle: this.isCircle.checked,
 				ctrl: this.isCtrl.checked
@@ -933,6 +989,10 @@ AllPages.prototype.openstreetmap = function() {
 					if (document.getElementsByClassName('add-area add-button col4').length)
 						document.getElementsByClassName('add-area add-button col4')[0].click();
 				}
+				if (hk_obj.exec_next_line) { // Next?
+					if (document.getElementsByClassName('add-line add-button col4').length)
+						document.getElementsByClassName('add-line add-button col4')[0].click();
+				}
 			}
 		}
 		/**
@@ -946,12 +1006,14 @@ AllPages.prototype.openstreetmap = function() {
 					!e[i].hasOwnProperty('enabled') ||
 					!e[i].hasOwnProperty('tags') ||
 					!e[i].hasOwnProperty('exec_next') ||
+					!e[i].hasOwnProperty('exec_next_line') ||
 					!e[i].hasOwnProperty('str_key') ||
 					typeof e[i].char != 'string' ||
 					typeof e[i].tags != 'string' ||
 					typeof e[i].str_key != 'string' ||
 					typeof e[i].enabled != 'boolean' ||
 					typeof e[i].exec_next != 'boolean' ||
+					typeof e[i].exec_next_line != 'boolean' ||
 					typeof e[i].square != 'boolean' ||
 					typeof e[i].circle != 'boolean' ||
 					e[i].char.length != 1 ||
