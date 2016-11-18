@@ -42,8 +42,8 @@ AllPages.prototype.openstreetmap = function() {
 		},
 		hk_notes:
 			'+'+
-			'<br>Area/Line: After hotkey is finished create a new Area/Line.'+
 			'<br>Enable: Whether hotkey is enabled or disabled.'+
+			'<br>Area/Line: After hotkey is finished create a new Area/Line.'+
 			'<br>Square/Circle: After hotkey is finished square/circle the area.'+
 			'<br>CTRL/⌘: Whether hotkey is single key or key + CTRL (⌘ on Mac) combination.'+
 			'<br>NOTE 1: An area must be selected for the hotkey to work correctly. To change an existing area using hotkeys, the area must first be selected.'+
@@ -1079,6 +1079,11 @@ AllPages.prototype.openstreetmap = function() {
 	
 	// Initialize tools.
 	tools_menu_init();
+
+	// show tools at load (to help in debuging):
+	//document.getElementById("id_browser_tools_div").click();
+	// hide notes at load (to help in debuging):
+	//document.getElementById("id_browser_tools_div").parentNode.children[1].childNodes["0"].click();
 }
 
 /**
